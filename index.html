@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gán Animation Hàng Loạt cho PowerPoint</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#f7f5f2;
+    --surface:#ffffff;
+    --text:#1c1b19;
+    --text-muted:#6b6660;
+    --accent:#c65d2e;
+    --accent-hover:#a94b22;
+    --border:#e5e0d8;
+    --success:#3a7a4e;
+    --error:#b3392c;
+    --chip-bg:#f1ece3;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1a1816;
+      --surface:#242220;
+      --text:#f0ece6;
+      --text-muted:#a89e93;
+      --accent:#e08653;
+      --accent-hover:#f0996a;
+      --border:#38342f;
+      --success:#5fb87d;
+      --error:#e17564;
+      --chip-bg:#2e2b27;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1a1816;
+    --surface:#242220;
+    --text:#f0ece6;
+    --text-muted:#a89e93;
+    --accent:#e08653;
+    --accent-hover:#f0996a;
+    --border:#38342f;
+    --success:#5fb87d;
+    --error:#e17564;
+    --chip-bg:#2e2b27;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:var(--font-sans);
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    padding:32px 16px;
+  }
+  .wrap{
+    max-width:680px;
+    margin:0 auto;
+  }
+  h1{
+    font-size:1.5rem;
+    font-weight:700;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:var(--text-muted);
+    font-size:0.95rem;
+    margin:0 0 28px;
+    line-height:1.5;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    font-size:0.85rem;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--text-muted);
+    margin:0 0 14px;
+    font-weight:600;
+  }
+  .dropzone{
+    border:2px dashed var(--border);
+    border-radius:12px;
+    padding:28px 16px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .dropzone:hover, .dropzone.dragover{
+    border-color:var(--accent);
+    background:var(--chip-bg);
+  }
+  .dropzone input{display:none;}
+  .dz-icon{font-size:2rem; margin-bottom:8px;}
+  .dz-text{font-weight:600; font-size:0.95rem;}
+  .dz-sub{color:var(--text-muted); font-size:0.82rem; margin-top:4px;}
+  .file-chip{
+    display:flex; align-items:center; gap:10px;
+    background:var(--chip-bg);
+    border-radius:10px;
+    padding:10px 14px;
+    margin-top:14px;
+    font-size:0.9rem;
+  }
+  .file-chip .name{font-weight:600; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .file-chip button{
+    background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1rem;
+    padding:2px 6px;
+  }
+  .mode-options{
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .mode-option{
+    display:flex; align-items:flex-start; gap:10px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .mode-option:has(input:checked){
+    border-color:var(--accent);
+    background:var(--chip-bg);
+  }
+  .mode-option input{margin-top:3px;}
+  .mode-option .label{font-weight:600; font-size:0.92rem;}
+  .mode-option .desc{color:var(--text-muted); font-size:0.82rem; margin-top:2px;}
+  select{
+    width:100%;
+    margin-top:12px;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text);
+    font-size:0.9rem;
+    font-family:inherit;
+  }
+  select:disabled{opacity:0.5;}
+  .grid-check{
+    display:flex; align-items:center; gap:8px;
+    margin-top:14px;
+    font-size:0.88rem;
+    color:var(--text-muted);
+  }
+  button.primary{
+    width:100%;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:14px;
+    font-size:1rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:background .15s;
+  }
+  button.primary:hover:not(:disabled){background:var(--accent-hover);}
+  button.primary:disabled{opacity:0.45; cursor:not-allowed;}
+  .status{
+    margin-top:14px;
+    font-size:0.88rem;
+    text-align:center;
+    color:var(--text-muted);
+    min-height:1.2em;
+  }
+  .status.success{color:var(--success); font-weight:600;}
+  .status.error{color:var(--error); font-weight:600;}
+  .progress-track{
+    width:100%; height:6px; border-radius:3px;
+    background:var(--chip-bg); overflow:hidden; margin-top:12px;
+    display:none;
+  }
+  .progress-track.show{display:block;}
+  .progress-fill{
+    height:100%; width:0%; background:var(--accent); transition:width .2s;
+  }
+  .footnote{
+    color:var(--text-muted);
+    font-size:0.78rem;
+    text-align:center;
+    margin-top:24px;
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎬 Gán Animation Hàng Loạt cho PowerPoint</h1>
+  <p class="subtitle">Upload file .pptx, chọn kiểu hiệu ứng (ngẫu nhiên hoặc cố định), công cụ sẽ tự động gán animation cho mọi đối tượng trên tất cả các slide rồi trả về file .pptx mới.</p>
+
+  <div class="card">
+    <h2>1. Chọn file PowerPoint</h2>
+    <label class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept=".pptx">
+      <div class="dz-icon">📁</div>
+      <div class="dz-text">Nhấn để chọn hoặc kéo thả file .pptx</div>
+      <div class="dz-sub">Chỉ hỗ trợ định dạng .pptx</div>
+    </label>
+    <div class="file-chip" id="fileChip" style="display:none;">
+      <span>📄</span>
+      <span class="name" id="fileName"></span>
+      <button id="clearFile" title="Xoá file">✕</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2. Kiểu Animation</h2>
+    <div class="mode-options">
+      <label class="mode-option">
+        <input type="radio" name="mode" value="random" checked>
+        <div>
+          <div class="label">🎲 Ngẫu nhiên</div>
+          <div class="desc">Mỗi đối tượng trên mỗi slide sẽ nhận 1 hiệu ứng ngẫu nhiên khác nhau.</div>
+        </div>
+      </label>
+      <label class="mode-option">
+        <input type="radio" name="mode" value="fixed">
+        <div>
+          <div class="label">🎯 Chọn 1 kiểu cố định</div>
+          <div class="desc">Áp dụng cùng 1 hiệu ứng cho toàn bộ đối tượng trong file.</div>
+          <select id="effectSelect" disabled>
+            <option value="fade">Fade (Mờ dần)</option>
+            <option value="wipeRight">Wipe – từ phải</option>
+            <option value="wipeLeft">Wipe – từ trái</option>
+            <option value="wipeUp">Wipe – từ dưới lên</option>
+            <option value="wipeDown">Wipe – từ trên xuống</option>
+            <option value="circle">Circle (Vòng tròn)</option>
+            <option value="diamond">Diamond (Kim cương)</option>
+            <option value="plus">Plus (Dấu cộng)</option>
+            <option value="wheel">Wheel (Bánh xe)</option>
+            <option value="boxIn">Box In (Khung thu nhỏ)</option>
+            <option value="checkerboard">Checkerboard (Ô cờ)</option>
+            <option value="blindsH">Blinds ngang</option>
+            <option value="blindsV">Blinds dọc</option>
+            <option value="dissolve">Dissolve (Tan biến)</option>
+            <option value="splitV">Split dọc</option>
+            <option value="splitH">Split ngang</option>
+          </select>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3. Cách xuất hiện</h2>
+    <div class="mode-options">
+      <label class="mode-option">
+        <input type="radio" name="arrangement" value="sequential" checked>
+        <div>
+          <div class="label">🔢 Lần lượt (bấm chuột để chuyển)</div>
+          <div class="desc">Mỗi lần người trình chiếu bấm chuột (chuyển slide), 1 đối tượng tiếp theo xuất hiện — cho đến khi hết đối tượng trong slide. Không có thời gian chờ.</div>
+        </div>
+      </label>
+      <label class="mode-option">
+        <input type="radio" name="arrangement" value="simultaneous">
+        <div>
+          <div class="label">⚡ Đồng thời (tự động, cùng lúc)</div>
+          <div class="desc">Tất cả đối tượng trong slide tự động xuất hiện cùng 1 lúc khi vào slide — không có đối tượng nào trước hay sau, không cần bấm chuột.</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <button class="primary" id="processBtn" disabled>Tạo Animation & Tải file về</button>
+  <div class="progress-track" id="progressTrack"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="status" id="status"></div>
+
+  <p class="footnote">File được xử lý hoàn toàn trên trình duyệt của bạn — không upload lên máy chủ nào khác.<br>Lưu ý: animation được chèn ở mức XML gốc của PowerPoint; mở lại bằng PowerPoint desktop để có kết quả chính xác nhất.</p>
+</div>
+
+<script>
+(function(){
+  const P_NS = "http://schemas.openxmlformats.org/presentationml/2006/main";
+
+  const EFFECTS = {
+    fade:        { filter: "fade",                 presetID: 10 },
+    wipeRight:   { filter: "wipe(right)",           presetID: 22 },
+    wipeLeft:    { filter: "wipe(left)",            presetID: 22 },
+    wipeUp:      { filter: "wipe(up)",               presetID: 22 },
+    wipeDown:    { filter: "wipe(down)",             presetID: 22 },
+    circle:      { filter: "circle",                 presetID: 5 },
+    diamond:     { filter: "diamond",                presetID: 17 },
+    plus:        { filter: "plus",                   presetID: 18 },
+    wheel:       { filter: "wheel(1)",                presetID: 45 },
+    boxIn:       { filter: "box(in)",                 presetID: 4 },
+    checkerboard:{ filter: "checkerboard(across)",    presetID: 9 },
+    blindsH:     { filter: "blinds(horizontal)",      presetID: 3 },
+    blindsV:     { filter: "blinds(vertical)",        presetID: 3 },
+    dissolve:    { filter: "dissolve",                presetID: 12 },
+    splitV:      { filter: "split(inVertical)",       presetID: 21 },
+    splitH:      { filter: "split(inHorizontal)",     presetID: 21 }
+  };
+  const EFFECT_KEYS = Object.keys(EFFECTS);
+
+  let idCounter = 1;
+  function nextId(){ idCounter++; return idCounter; }
+
+  function randomEffectKey(){
+    return EFFECT_KEYS[Math.floor(Math.random() * EFFECT_KEYS.length)];
+  }
+
+  // Build the <p:par> block for one shape's entrance effect.
+  // stCondXml: the XML for this shape's outer start-condition (controls when it triggers)
+  // nodeType: clickEffect | withEffect | afterEffect (mostly cosmetic label in PowerPoint's animation pane)
+  function buildShapePar(spid, effectKey, stCondXml, nodeType, grpId){
+    const eff = EFFECTS[effectKey];
+    const outerId = nextId();
+    const midId = nextId();
+    const clickId = nextId();
+    const setId = nextId();
+    const animId = nextId();
+
+    return (
+      '<p:par><p:cTn id="' + outerId + '" fill="hold"><p:stCondLst>' + stCondXml + '</p:stCondLst>' +
+      '<p:childTnLst>' +
+        '<p:par><p:cTn id="' + midId + '" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst>' +
+        '<p:childTnLst>' +
+          '<p:par><p:cTn id="' + clickId + '" presetID="' + eff.presetID + '" presetClass="entr" presetSubtype="0" fill="hold" grpId="' + grpId + '" nodeType="' + nodeType + '">' +
+          '<p:stCondLst><p:cond delay="0"/></p:stCondLst>' +
+          '<p:childTnLst>' +
+            '<p:set><p:cBhvr><p:cTn id="' + setId + '" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn>' +
+            '<p:tgtEl><p:spTgt spid="' + spid + '"/></p:tgtEl>' +
+            '<p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr>' +
+            '<p:to><p:strVal val="visible"/></p:to></p:set>' +
+            '<p:animEffect transition="in" filter="' + eff.filter + '">' +
+            '<p:cBhvr><p:cTn id="' + animId + '" dur="500"/>' +
+            '<p:tgtEl><p:spTgt spid="' + spid + '"/></p:tgtEl></p:cBhvr>' +
+            '</p:animEffect>' +
+          '</p:childTnLst>' +
+          '</p:cTn></p:par>' +
+        '</p:childTnLst></p:cTn></p:par>' +
+      '</p:childTnLst></p:cTn></p:par>'
+    );
+  }
+
+  // arrangement: 'sequential' = each object needs its own click to advance (bấm chuyển slide → hiện tiếp theo),
+  //              no time delay involved at all — pure click-to-reveal, one object per click.
+  //              'simultaneous' = every object appears together automatically the instant the slide is shown,
+  //              no click needed, no object before/after another.
+  function buildTiming(shapeIds, mode, fixedKey, arrangement){
+    const rootId = nextId();
+    const seqId = nextId();
+    let parsXml = "";
+    // Same non-zero grpId on every shape tells PowerPoint's Animation Pane to treat them
+    // as ONE grouped build (a single collapsible entry) instead of separate items.
+    const groupId = 1;
+
+    shapeIds.forEach((spid, i) => {
+      const effectKey = mode === "random" ? randomEffectKey() : fixedKey;
+      let stCondXml, nodeType, grpId;
+
+      if (arrangement === "sequential"){
+        // Every object waits for its own click (the "advance slide" click reveals the next object instead).
+        stCondXml = '<p:cond delay="indefinite"/>';
+        nodeType = "clickEffect";
+        grpId = 0; // standalone, independent animations
+      } else {
+        // Simultaneous & automatic: every object starts at delay 0 — together, no click required,
+        // and all share the same grpId so PowerPoint treats them as ONE combined animation group.
+        stCondXml = '<p:cond delay="0"/>';
+        nodeType = "afterEffect";
+        grpId = groupId;
+      }
+      parsXml += buildShapePar(spid, effectKey, stCondXml, nodeType, grpId);
+    });
+
+    return (
+      '<p:timing><p:tnLst><p:par><p:cTn id="' + rootId + '" dur="indefinite" restart="never" nodeType="tmRoot">' +
+      '<p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="' + seqId + '" dur="indefinite" nodeType="mainSeq">' +
+      '<p:childTnLst>' + parsXml + '</p:childTnLst>' +
+      '</p:cTn><p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>' +
+      '<p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst>' +
+      '</p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>'
+    );
+  }
+
+  function getTopLevelShapeIds(xmlDoc){
+    const spTree = xmlDoc.getElementsByTagNameNS(P_NS, "spTree")[0];
+    if (!spTree) return [];
+    const ids = [];
+    const validTags = ["sp", "pic", "graphicFrame", "grpSp", "cxnSp"];
+    for (let i = 0; i < spTree.childNodes.length; i++){
+      const node = spTree.childNodes[i];
+      if (node.nodeType !== 1) continue;
+      if (validTags.indexOf(node.localName) === -1) continue;
+      // find nested cNvPr (first one, which belongs to this shape)
+      const cNvPrList = node.getElementsByTagNameNS("*", "cNvPr");
+      if (cNvPrList.length > 0){
+        const id = cNvPrList[0].getAttribute("id");
+        if (id) ids.push(id);
+      }
+    }
+    return ids;
+  }
+
+  function removeExistingTiming(xmlString){
+    return xmlString.replace(/<p:timing>[\s\S]*?<\/p:timing>/, "");
+  }
+
+  function insertTiming(xmlString, timingXml){
+    // p:timing must go after p:transition if present, else after p:clrMapOvr, else after p:cSld, before extLst
+    if (xmlString.includes("</p:transition>")){
+      return xmlString.replace("</p:transition>", "</p:transition>" + timingXml);
+    }
+    if (xmlString.includes("</p:clrMapOvr>")){
+      return xmlString.replace("</p:clrMapOvr>", "</p:clrMapOvr>" + timingXml);
+    }
+    // insert right after </p:cSld>
+    return xmlString.replace("</p:cSld>", "</p:cSld>" + timingXml);
+  }
+
+  async function processFile(file, mode, fixedKey, arrangement, onProgress){
+    const zip = await JSZip.loadAsync(file);
+    const slideFiles = Object.keys(zip.files)
+      .filter(name => /^ppt\/slides\/slide\d+\.xml$/.test(name))
+      .sort((a, b) => {
+        const na = parseInt(a.match(/slide(\d+)\.xml/)[1], 10);
+        const nb = parseInt(b.match(/slide(\d+)\.xml/)[1], 10);
+        return na - nb;
+      });
+
+    for (let i = 0; i < slideFiles.length; i++){
+      const path = slideFiles[i];
+      let xmlString = await zip.file(path).async("string");
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+      const shapeIds = getTopLevelShapeIds(xmlDoc);
+
+      if (shapeIds.length > 0){
+        xmlString = removeExistingTiming(xmlString);
+        const timingXml = buildTiming(shapeIds, mode, fixedKey, arrangement);
+        xmlString = insertTiming(xmlString, timingXml);
+        zip.file(path, xmlString);
+      }
+      onProgress((i + 1) / slideFiles.length);
+    }
+
+    const blob = await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+    return blob;
+  }
+
+  // ---- UI wiring ----
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("fileInput");
+  const fileChip = document.getElementById("fileChip");
+  const fileNameEl = document.getElementById("fileName");
+  const clearFileBtn = document.getElementById("clearFile");
+  const processBtn = document.getElementById("processBtn");
+  const statusEl = document.getElementById("status");
+  const effectSelect = document.getElementById("effectSelect");
+  const progressTrack = document.getElementById("progressTrack");
+  const progressFill = document.getElementById("progressFill");
+
+  let selectedFile = null;
+
+  document.querySelectorAll('input[name="mode"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+      const isFixed = document.querySelector('input[name="mode"]:checked').value === "fixed";
+      effectSelect.disabled = !isFixed;
+    });
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    if (e.target.files.length > 0) setFile(e.target.files[0]);
+  });
+
+  ["dragover"].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+  });
+  ["dragleave", "drop"].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove("dragover"); });
+  });
+  dropzone.addEventListener("drop", (e) => {
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.toLowerCase().endsWith(".pptx")) setFile(f);
+    else setStatus("Vui lòng chọn đúng file .pptx", "error");
+  });
+
+  function setFile(f){
+    selectedFile = f;
+    fileNameEl.textContent = f.name;
+    fileChip.style.display = "flex";
+    processBtn.disabled = false;
+    setStatus("", "");
+  }
+
+  clearFileBtn.addEventListener("click", () => {
+    selectedFile = null;
+    fileInput.value = "";
+    fileChip.style.display = "none";
+    processBtn.disabled = true;
+  });
+
+  function setStatus(msg, cls){
+    statusEl.textContent = msg;
+    statusEl.className = "status" + (cls ? " " + cls : "");
+  }
+
+  function setProgress(frac){
+    progressTrack.classList.add("show");
+    progressFill.style.width = Math.round(frac * 100) + "%";
+  }
+
+  processBtn.addEventListener("click", async () => {
+    if (!selectedFile) return;
+    processBtn.disabled = true;
+    setProgress(0);
+    setStatus("Đang xử lý file...", "");
+
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    const fixedKey = effectSelect.value;
+    const arrangement = document.querySelector('input[name="arrangement"]:checked').value;
+
+    try {
+      const blob = await processFile(selectedFile, mode, fixedKey, arrangement, (frac) => {
+        setProgress(frac);
+        setStatus("Đang gán animation... " + Math.round(frac * 100) + "%", "");
+      });
+
+      const outName = selectedFile.name.replace(/\.pptx$/i, "") + "-animated.pptx";
+
+      // Standard browser download (works on any static host, incl. GitHub Pages)
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = outName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      setStatus("✅ Đã tải file: " + outName, "success");
+    } catch (err){
+      console.error(err);
+      setStatus("❌ Lỗi xử lý file: " + (err.message || err), "error");
+    } finally {
+      processBtn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
